@@ -602,7 +602,49 @@ function removeTypingIndicator() {
 
 async function callAPI(agent, systemPrompt, userMessage) {
   const config = getApiConfig(agent);
-  if (!config.url || !config.key) throw new Error('请先配置 API 地址和 Key');
+  if (!config.url) throw new Error('请先配置 API 地址');
+  
+  const isProxy = config.url.includes('localhost') || config.url.includes('127.0.0.1') || config.url.includes('vercel.app');
+  const hasKey = !!config.key;
+  
+  // 如果不是代理又没有Key，报错
+  if (!isProxy && !hasKey) throw new Error('请先配置 API Key');
+  
+  let requestUrl, body, authHeader;
+  
+  if (isProxy) {
+    requestUrl = config.url.replace(/\/+$/, '') + '/chat/completions';
+    body = JSON.stringify({
+      url: 'https://api.deepseek.com',
+      model: config.model,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+      temperature: 0.8,
+      max_tokens: 4000,
+    });
+    authHeader = hasKey ? `Bearer ${config.key}` : '';
+  } else {
+    requestUrl = config.url.endsWith('/chat/completions') ? config.url : config.url.replace(/\/+$/, '') + '/chat/completions';
+    body = JSON.stringify({
+      model: config.model,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+      temperature: 0.8,
+      max_tokens: 4000,
+    });
+    authHeader = `Bearer ${config.key}`;
+  }
+  
+  const controller = new AbortController();
+  state.abortController = controller;
+  
+  const headers = { 'Content-Type': 'application/json' };
+  if (authHeader) headers['Authorization'] = authHeader;
+  
+  const response = await fetch(requestUrl, {
+    method: 'POST',
+    headers: headers,
+    body: body,
+    signal: controller.signal,
+  });
   
   const isLocalProxy = config.url.includes('localhost') || config.url.includes('127.0.0.1');
   let targetApiUrl = config.url;
