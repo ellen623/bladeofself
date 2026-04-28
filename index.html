@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Psyche Forge · 双Agent心理测试工坊</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  /* ===== Reset & Base ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    background: #faf8f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    max-width: 780px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    border-left: 1px solid #e8e4de;
+    border-right: 1px solid #e8e4de;
+    background: #fff;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    text-align: center;
+    padding: 32px 24px 20px;
+    border-bottom: 2px solid #1a1a1a;
+    margin-bottom: 0;
+  }
+  .header h1 {
+    font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: #1a1a1a;
+  }
+  .header .subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .header .divider {
+    width: 40px;
+    height: 1px;
+    background: #ccc;
+    margin: 12px auto 0;
+  }
+
+  /* ===== Settings Bar ===== */
+  .settings-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e8e4de;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .settings-bar .tab {
+    padding: 10px 18px;
+    cursor: pointer;
+    color: #999;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  .settings-bar .tab:hover { color: #666; }
+  .settings-bar .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+  .settings-panel {
+    display: none;
+    padding: 18px 24px;
+    background: #faf8f5;
+    border-bottom: 1px solid #e8e4de;
+    font-size: 13px;
+  }
+  .settings-panel.open { display: block; }
+  .settings-panel .row { display: flex; gap: 12px; margin-bottom: 10px; }
+  .settings-panel .row:last-child { margin-bottom: 0; }
+  .settings-panel .field { flex: 1; }
+  .settings-panel .field label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 3px;
+  }
+  .settings-panel .field input, .settings-panel .field select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: #fff;
+    color: #1a1a1a;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  .settings-panel .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  .settings-panel .field input:focus, .settings-panel .field select:focus { border-color: #1a1a1a; }
+  .settings-panel .checkbox-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 6px;
+  }
+  .settings-panel .checkbox-row label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: #666;
+  }
+  .settings-panel .checkbox-row input[type="checkbox"] { width: auto; }
+  .dual-config { display: none; margin-top: 10px; padding: 12px; background: #fff; border: 1px solid #e8e4de; }
+  .dual-config.show { display: block; }
+  .dual-config .field { margin-bottom: 8px; }
+  .dual-config .field:last-child { margin-bottom: 0; }
+
+  /* ===== Topic Area ===== */
+  .topic-area {
+    padding: 18px 24px;
+    border-bottom: 1px solid #e8e4de;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .topic-area textarea {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: transparent;
+    resize: none;
+    outline: none;
+    min-height: 36px;
+    line-height: 1.6;
+  }
+  .topic-area textarea:focus { border-bottom-color: #1a1a1a; }
+  .topic-area textarea::placeholder { color: #bbb; }
+  .topic-area .btn {
+    padding: 8px 20px;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .topic-area .btn:hover { background: #333; }
+  .topic-area .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .topic-area .btn-outline {
+    background: transparent;
+    color: #1a1a1a;
+  }
+  .topic-area .btn-outline:hover { background: #f5f3f0; }
+  .topic-area .btn-danger {
+    border-color: #c00;
+    color: #c00;
+    background: transparent;
+  }
+  .topic-area .btn-danger:hover { background: #fff5f5; }
+
+  /* ===== Debate Area ===== */
+  .debate-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .debate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 24px;
+    border-bottom: 1px solid #e8e4de;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #999;
+  }
+  .debate-header .round-info { display: flex; gap: 14px; align-items: center; }
+  .debate-header .round-info .badge {
+    border: 1px solid #ddd;
+    padding: 1px 8px;
+    font-size: 10px;
+  }
+  .debate-header .round-info .badge.extra { border-color: #c96; color: #c96; }
+  .debate-messages {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    min-height: 300px;
+    max-height: calc(100vh - 380px);
+  }
+  .debate-messages::-webkit-scrollbar { width: 4px; }
+  .debate-messages::-webkit-scrollbar-track { background: transparent; }
+  .debate-messages::-webkit-scrollbar-thumb { background: #ddd; }
+
+  /* ===== Messages ===== */
+  .message {
+    margin-bottom: 20px;
+    animation: fadeIn 0.4s ease-out;
+    max-width: 680px;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .message .meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #bbb;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .message .meta .name { font-weight: 500; }
+  .message .meta .time { color: #ccc; margin-left: 8px; }
+  .message .content {
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: #1a1a1a;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .message .content .highlight { 
+    background: #fff3d6;
+    padding: 0 2px;
+  }
+  .message.niuma .meta .name { color: #8b6914; }
+  .message.citou .meta .name { color: #1a6b8a; }
+  .message.user .meta .name { color: #666; }
+  .message.system .meta .name { color: #bbb; }
+  .message.system .content { color: #999; font-style: italic; font-size: 13px; }
+  .message.challenge .content { border-left: 2px solid #c00; padding-left: 14px; }
+
+  /* ===== Typing ===== */
+  .typing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    margin-bottom: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #bbb;
+  }
+  .typing .dots { display: flex; gap: 3px; }
+  .typing .dots span {
+    width: 5px; height: 5px;
+    background: #ccc;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+
+  /* ===== Empty State ===== */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    color: #ccc;
+    text-align: center;
+  }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; font-family: 'Playfair Display', serif; color: #ddd; }
+  .empty-state p { font-size: 14px; line-height: 1.8; color: #bbb; font-style: italic; }
+
+  /* ===== Input Area ===== */
+  .input-area {
+    border-top: 1px solid #e8e4de;
+    padding: 14px 24px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: #faf8f5;
+  }
+  .input-area input {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: transparent;
+    outline: none;
+  }
+  .input-area input:focus { border-bottom-color: #1a1a1a; }
+  .input-area input::placeholder { color: #999; font-style: italic; }
+  .input-area input:disabled { opacity: 0.4; }
+  .input-area .btn-send {
+    padding: 6px 16px;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .input-area .btn-send:hover { background: #333; }
+  .input-area .btn-send:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ===== Result Footer ===== */
+  .result-footer {
+    display: none;
+    padding: 12px 24px;
+    border-top: 1px solid #e8e4de;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: #faf8f5;
+  }
+  .result-footer.show { display: flex; }
+  .result-footer .btn {
+    padding: 6px 14px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #666;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .result-footer .btn:hover { border-color: #1a1a1a; color: #1a1a1a; }
+  .result-footer .btn-primary { border-color: #1a1a1a; background: #1a1a1a; color: #fff; }
+  .result-footer .btn-primary:hover { background: #333; }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 600px) {
+    .app { border: none; }
+    .header { padding: 24px 16px 16px; }
+    .header h1 { font-size: 20px; }
+    .settings-panel { padding: 14px 16px; }
+    .settings-panel .row { flex-direction: column; gap: 8px; }
+    .topic-area { padding: 14px 16px; flex-direction: column; }
+    .topic-area textarea { width: 100%; }
+    .debate-messages { padding: 16px; max-height: calc(100vh - 420px); }
+    .input-area { padding: 12px 16px; }
+    .result-footer { padding: 10px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <h1 style="font-family:'Special Elite','Courier New',monospace;font-weight:400;letter-spacing:1px;">The Anatomy Blade of the Self</h1>
+    <div class="subtitle">双AGENT对话系统——牛马和刺儿头通过激情对线生成您所需要的专业心理测试题。<br>您可以在任何时候在底部输入框插话暂停辩论，牛马们纳入您的意见后继续辩论。<br>首次激辩默认5轮。</div>
+    <div class="divider"></div>
+  </div>
+
+  <!-- Settings Bar -->
+  <div class="settings-bar">
+    <div class="tab active" onclick="toggleSettings('api')">⚙ 设置</div>
+  </div>
+  <div class="settings-panel open" id="panel-api">
+    <div class="row">
+      <div class="field">
+        <label>供应商</label>
+        <select id="apiProvider" onchange="onProviderChange()">
+          <option value="deepseek">DeepSeek</option>
+          <option value="openai">OpenAI</option>
+          <option value="claude">Claude (Anthropic)</option>
+          <option value="gemini">Gemini (Google)</option>
+          <option value="tongyi">通义千问</option>
+          <option value="glm">智谱 GLM</option>
+          <option value="custom">自定义</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>模型</label>
+        <input type="text" id="apiModel" value="deepseek-chat" placeholder="deepseek-chat">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field" style="flex:2">
+        <label>API 地址</label>
+        <input type="text" id="apiUrl" value="https://api.deepseek.com" placeholder="https://api.deepseek.com">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>API Key <span style="font-weight:normal;color:#999;">（不填则使用免费额度）</span></label>
+        <input type="password" id="apiKey" placeholder="留空使用免费额度" autocomplete="off">
+      </div>
+    </div>
+    <div style="font-size:11px;color:#999;margin-top:4px;line-height:1.6;">
+      💡 免费体验 <strong>10+轮对话</strong>（单次30次API调用）。用完可在此输入自己的API Key继续使用。
+      <span id="quotaDisplay" style="display:none;color:#c96;"> 已用 <span id="quotaUsed">0</span>/30 次</span>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="dualModel" onchange="toggleDualModel()">
+      <label for="dualModel">牛马和刺儿头使用不同模型</label>
+    </div>
+    <div class="dual-config" id="dualModelConfig">
+      <div class="row"><div class="field"><label>🧠 牛马 - 地址</label><input type="text" id="niumaApiUrl" placeholder="留空使用默认"></div><div class="field"><label>🧠 牛马 - 模型</label><input type="text" id="niumaModel" placeholder="留空使用默认"></div></div>
+      <div class="field"><label>🧠 牛马 - Key</label><input type="password" id="niumaKey" placeholder="留空使用默认" autocomplete="off"></div>
+      <div class="row"><div class="field"><label>🔬 刺儿头 - 地址</label><input type="text" id="citouApiUrl" placeholder="留空使用默认"></div><div class="field"><label>🔬 刺儿头 - 模型</label><input type="text" id="citouModel" placeholder="留空使用默认"></div></div>
+      <div class="field"><label>🔬 刺儿头 - Key</label><input type="password" id="citouKey" placeholder="留空使用默认" autocomplete="off"></div>
+    </div>
+  </div>
+  <!-- Topic Area -->
+  <div class="topic-area">
+    <textarea id="topicInput" rows="1" placeholder="描述你想测试的心理主题…">职场冷酷度测试，要贴近日常工作场景，题目要够极端，能测出一个人在职场上有多冷酷无情</textarea>
+    <button class="btn" id="startBtn" onclick="startDebate()">开始</button>
+    <button class="btn btn-danger" id="stopBtn" style="display:none" onclick="stopDebate()">停止</button>
+    <button class="btn btn-outline" id="clearBtn" onclick="clearDebate()">清空</button>
+  </div>
+
+  <!-- Debate Area -->
+  <div class="debate-area">
+    <div class="debate-header">
+      <div class="round-info">
+        <span id="roundDisplay">等待输入</span>
+        <span class="badge" id="extraRoundBadge" style="display:none"></span>
+      </div>
+      <span id="timerDisplay" style="font-family:'IBM Plex Mono',monospace">⏱ 00:00</span>
+    </div>
+    <div class="debate-messages" id="debateMessages">
+      <div class="empty-state">
+        <div class="icon">♢</div>
+        <p>输入主题后点击"开始"<br>两个Agent将开始对话</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="老板请讲，随时打断辩论，也可以说「继续」让牛马们再多辩几轮" disabled>
+    <button class="btn-send" id="sendBtn" onclick="sendUserMessage()" disabled>发送</button>
+  </div>
+
+  <!-- Result Footer -->
+  <div class="result-footer" id="resultFooter">
+    <button class="btn btn-primary" onclick="exportMarkdown()">导出</button>
+    <button class="btn" onclick="copyResult()">复制</button>
+    <button class="btn" onclick="clearDebate()">重置</button>
+  </div>
+</div>
+
+<script>
+const state = {
+  running: false,
+  aborted: false,
+  round: 0,
+  maxRounds: 5,
+  extraRounds: 0,
+  totalExtraRounds: 0,
+  messages: [],
+  currentQuestions: '',
+  debateHistory: [],
+  timerInterval: null,
+  seconds: 0,
+  abortController: null,
+  topic: '',
+  waitingForUser: false,
+  userMessageResolve: null,
+  debatePaused: false,
+  pendingUserMessage: null,
+  debateGenerator: null,
+};
+
+function toggleSettings(panel) {
+  document.querySelectorAll('.settings-bar .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('open'));
+  document.querySelector(`.settings-bar .tab:nth-child(${panel === 'api' ? 1 : 2})`).classList.add('active');
+  document.getElementById(`panel-${panel}`).classList.add('open');
+}
+
+function toggleDualModel() {
+  document.getElementById('dualModelConfig').classList.toggle('show', document.getElementById('dualModel').checked);
+}
+
+const PROVIDER_CONFIGS = {
+  deepseek: { url: 'https://api.deepseek.com', model: 'deepseek-chat' },
+  openai: { url: 'https://api.openai.com', model: 'gpt-4o' },
+  claude: { url: 'https://api.anthropic.com', model: 'claude-sonnet-4-20250514' },
+  gemini: { url: 'https://generativelanguage.googleapis.com', model: 'gemini-2.5-flash-preview-04-17' },
+  tongyi: { url: 'https://dashscope.aliyuncs.com', model: 'qwen-max' },
+  glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
+  custom: { url: '', model: '' },
+};
+
+function onProviderChange() {
+  const provider = document.getElementById('apiProvider').value;
+  const config = PROVIDER_CONFIGS[provider];
+  if (config) {
+    document.getElementById('apiUrl').value = config.url;
+    document.getElementById('apiModel').value = config.model;
+  }
+  localStorage.setItem('forgeApiProvider', provider);
+}
+
+function getApiConfig(agent) {
+  const baseUrl = document.getElementById('apiUrl').value.trim();
+  const baseModel = document.getElementById('apiModel').value.trim();
+  const baseKey = document.getElementById('apiKey').value.trim();
+  if (!document.getElementById('dualModel').checked) return { url: baseUrl, model: baseModel, key: baseKey };
+  if (agent === 'niuma') return {
+    url: document.getElementById('niumaApiUrl').value.trim() || baseUrl,
+    model: document.getElementById('niumaModel').value.trim() || baseModel,
+    key: document.getElementById('niumaKey').value.trim() || baseKey,
+  };
+  return {
+    url: document.getElementById('citouApiUrl').value.trim() || baseUrl,
+    model: document.getElementById('citouModel').value.trim() || baseModel,
+    key: document.getElementById('citouKey').value.trim() || baseKey,
+  };
+}
+
+function startTimer() {
+  state.seconds = 0; updateTimerDisplay();
+  state.timerInterval = setInterval(() => { state.seconds++; updateTimerDisplay(); }, 1000);
+}
+
+function stopTimer() { if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; } }
+
+function updateTimerDisplay() {
+  const m = String(Math.floor(state.seconds / 60)).padStart(2, '0');
+  const s = String(state.seconds % 60).padStart(2, '0');
+  document.getElementById('timerDisplay').textContent = `⏱ ${m}:${s}`;
+}
+
+function updateRoundDisplay() {
+  const el = document.getElementById('roundDisplay');
+  const total = state.maxRounds + state.totalExtraRounds;
+  el.textContent = state.round > 0 ? `第 ${state.round}/${total} 轮` : '等待输入';
+  const badge = document.getElementById('extraRoundBadge');
+  if (state.totalExtraRounds > 0) {
+    badge.textContent = `+${state.totalExtraRounds} 追加`;
+    badge.style.display = 'inline';
+    badge.className = 'badge extra';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function addMessage(type, content, extra = {}) {
+  const container = document.getElementById('debateMessages');
+  const empty = container.querySelector('.empty-state');
+  if (empty) empty.remove();
+  const msg = document.createElement('div');
+  msg.className = `message ${type}`;
+  if (extra.challenge) msg.classList.add('challenge');
+  const names = { niuma: '🧠 牛马', citou: '🔬 刺儿头', user: '👤 老板', system: '⚙️ 系统' };
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.innerHTML = `<span class="name">${names[type] || type}</span><span class="time">${extra.time || new Date().toLocaleTimeString()}</span>`;
+  msg.appendChild(meta);
+  const body = document.createElement('div');
+  body.className = 'content';
+  // Convert markdown-like formatting to HTML
+  // Simple text content - no HTML conversion needed, use textContent for safety
+  body.textContent = content;
+  msg.appendChild(body);
+  container.appendChild(msg);
+  state.messages.push({ type, content, extra });
+}
+
+function addTypingIndicator(agent) {
+  const container = document.getElementById('debateMessages');
+  const div = document.createElement('div');
+  div.className = 'typing'; div.id = 'typingIndicator';
+  div.innerHTML = `<span>${agent === 'niuma' ? '牛马' : '刺儿头'}</span> 思考中<span class="dots"><span></span><span></span><span></span></span>`;
+  container.appendChild(div);
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+async function callAPI(agent, systemPrompt, userMessage) {
+  const config = getApiConfig(agent);
+  if (!config.url || !config.key) throw new Error('请先配置 API 地址和 Key');
+  
+  const isLocalProxy = config.url.includes('localhost') || config.url.includes('127.0.0.1');
+  let targetApiUrl = config.url;
+  let requestUrl = config.url;
+  
+  if (isLocalProxy) {
+    requestUrl = config.url.endsWith('/chat/completions') ? config.url : config.url.replace(/\/+$/, '') + '/chat/completions';
+    targetApiUrl = localStorage.getItem('agentRealApiUrl') || 'https://api.deepseek.com';
+  } else {
+    requestUrl = config.url.endsWith('/chat/completions') ? config.url : config.url.replace(/\/+$/, '') + '/chat/completions';
+    targetApiUrl = config.url;
+  }
+  
+  const body = JSON.stringify({
+    url: targetApiUrl,
+    model: config.model,
+    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+    temperature: 0.8,
+    max_tokens: 4000,
+  });
+  
+  const controller = new AbortController();
+  state.abortController = controller;
+  
+  const response = await fetch(requestUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.key}` },
+    body: body,
+    signal: controller.signal,
+  });
+  if (!response.ok) { 
+    let err = '';
+    try { 
+      const errData = JSON.parse(await response.text());
+      err = errData.error || response.statusText;
+      // Check for quota error
+      if (errData.quotaError) {
+        throw { name: 'QuotaError', message: err, quotaReason: errData.quotaReason };
+      }
+    } catch(e) { 
+      if (e.name === 'QuotaError') throw e;
+      err = response.statusText; 
+    }
+    throw new Error(`API ${response.status}: ${err.slice(0, 200)}`);
+  }
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+const NI_UMA_SYSTEM = `你是"牛马"，一位天才心理学家和产品设计师。
+
+你的性格：才华横溢、富有创造力、自信但乐于接受批评。你设计优雅的思想实验。
+
+你的任务：根据用户的主题，生成3-5道关于"人性冷酷度"的心理测试题。
+
+要求：
+1. Each question must be a matter of degree (slider/number input, not binary choice)
+2. Questions should be grounded in everyday work and life scenarios
+3. Label the cruelty direction (higher = more cruel, or lower = more cruel)
+4. Set reasonable numerical ranges
+5. Questions should escalate from mild to extreme
+6. You may reference psychological theories
+
+Output format for each question:
+### Question N: Title
+> Scenario description
+
+- **Range:** min ~ max
+- **Cruelty direction:** higher = more cruel / lower = more cruel
+- **Scoring:** How input maps to 0-10
+- **Rationale:** Why this design
+
+当刺儿头挑战你时：认真对待反馈，对的就改进，被误解了就解释。`;
+
+const CI_TOU_SYSTEM = `你是"刺儿头"，一位实验心理学家和数据科学家。
+
+你的性格：严谨、理性、注重细节。你批评的是工作，不是人。你尖锐但富有建设性——每个批评都附带建议。
+
+你的任务：从五个维度审查牛马的题目：
+1. 科学有效性——变量是否可控？量表是否有区分度？
+2. 极端性——是否触及人性的极限？
+3. 情境性——场景是否 relatable？
+4. 全面性——题目集是否覆盖了不同的冷酷维度？
+5. 可操作性——题目是否清晰且可回答？
+
+规则：每轮至少指出1个具体问题。每个问题必须附带修复方案。认可好的改进。如果连续2轮不满意，建议暂停等待用户输入。
+
+输出格式：
+### Challenge Q[N] (or General)
+**Issue:** [description]
+
+**Suggestion:** [fix]
+
+**Severity:** ⚠️ (minor/major/critical)`;
+
+async function startDebate() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic) { addMessage('system', '请先输入主题。'); return; }
+  
+  state.topic = topic;
+  state.running = true;
+  state.aborted = false;
+  state.round = 0;
+  state.extraRounds = 0;
+  state.totalExtraRounds = 0;
+  state.messages = [];
+  state.currentQuestions = '';
+  state.debateHistory = [];
+  state.abortController = null;
+  state.debatePaused = false;
+  state.pendingUserMessage = null;
+
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-flex';
+  document.getElementById('userInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('resultFooter').classList.remove('show');
+  document.getElementById('extraRoundBadge').style.display = 'none';
+
+  const container = document.getElementById('debateMessages');
+  container.innerHTML = '';
+  document.getElementById('roundDisplay').textContent = '准备中…';
+  startTimer();
+
+  try {
+    await runDebateCycle(topic);
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      addMessage('system', '辩论已停止。');
+    } else if (err.name === 'QuotaError') {
+      addMessage('system', `⚠️ ${err.message}`);
+      // Show quota display
+      document.getElementById('quotaDisplay').style.display = 'inline';
+    } else {
+      addMessage('system', `错误: ${err.message}`);
+      console.error(err);
+    }
+  } finally {
+    state.running = false;
+    document.getElementById('startBtn').style.display = 'inline-flex';
+    document.getElementById('stopBtn').style.display = 'none';
+    // Keep input enabled so user can type "继续" or new opinions
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    stopTimer();
+  }
+}
+
+async function runDebateCycle(topic) {
+  state.round = 1;
+  updateRoundDisplay();
+  addMessage('system', `第 ${state.round} 轮：牛马正在生成初始题目…`);
+
+  addTypingIndicator('niuma');
+  let niumaMsg;
+  try {
+    niumaMsg = await callAPI('niuma', NI_UMA_SYSTEM, `请根据以下主题生成3-5道关于人性冷酷度的心理测试题：\n\n${topic}`);
+  } catch (e) {
+    removeTypingIndicator();
+    if (e.name === 'AbortError' && state.pendingUserMessage) {
+      // User interrupted initial generation, will handle below
+    } else {
+      addMessage('system', `牛马错误: ${e.message}`);
+      return;
+    }
+  }
+  removeTypingIndicator();
+  if (state.aborted) return;
+  if (niumaMsg) {
+    addMessage('niuma', niumaMsg);
+    state.currentQuestions = niumaMsg;
+    state.debateHistory.push({ round: state.round, agent: 'niuma', content: niumaMsg });
+  }
+  
+  // Handle interruption right after initial generation
+  if (state.pendingUserMessage) {
+    await handleUserInterruption();
+    if (state.aborted) return;
+  }
+
+  for (let i = 2; i <= state.maxRounds; i++) {
+    if (state.aborted) return;
+    state.round = i;
+    updateRoundDisplay();
+
+    // Check for user interruption
+    if (state.pendingUserMessage) {
+      await handleUserInterruption();
+      if (state.aborted) return;
+      // After handling, do one more round
+      continue;
+    }
+
+    // Ci Tou challenges
+    addMessage('system', `第 ${state.round} 轮：刺儿头正在审查…`);
+    addTypingIndicator('citou');
+    const challengePrompt = `牛马当前的题目集：\n\n${state.currentQuestions}\n\n请从以下五个维度审查：科学有效性、极端性、情境相关性、全面性、可操作性。`;
+    let citouMsg;
+    try {
+      citouMsg = await callAPI('citou', CI_TOU_SYSTEM, challengePrompt);
+    } catch (e) {
+      removeTypingIndicator();
+      if (e.name === 'AbortError' && state.pendingUserMessage) {
+        // User interrupted, will handle below
+      } else {
+        addMessage('system', `刺儿头错误: ${e.message}`);
+        break;
+      }
+    }
+    removeTypingIndicator();
+    if (state.aborted) return;
+    if (citouMsg) {
+      addMessage('citou', citouMsg, { challenge: true });
+      state.debateHistory.push({ round: state.round, agent: 'citou', content: citouMsg, challenge: true });
+    }
+
+    if (state.pendingUserMessage) {
+      await handleUserInterruption();
+      if (state.aborted) return;
+      continue;
+    }
+
+    // Niu Ma responds
+    addMessage('system', `第 ${state.round} 轮：牛马正在回应…`);
+    addTypingIndicator('niuma');
+    const respondPrompt = `刺儿头对你的题目提出了挑战：\n\n${citouMsg}\n\n请修改你的题目集。如果同意就改进，不同意就解释。输出完整的修改后版本。`;
+    try {
+      niumaMsg = await callAPI('niuma', NI_UMA_SYSTEM, respondPrompt);
+    } catch (e) {
+      removeTypingIndicator();
+      if (e.name === 'AbortError' && state.pendingUserMessage) {
+        // User interrupted, will handle below
+      } else {
+        addMessage('system', `牛马错误: ${e.message}`);
+        break;
+      }
+    }
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('niuma', niumaMsg);
+    state.currentQuestions = niumaMsg;
+    state.debateHistory.push({ round: state.round, agent: 'niuma', content: niumaMsg });
+  }
+
+  if (!state.aborted) {
+    // Generate result tiers
+    addMessage('system', '正在生成结果分档方案…');
+    addTypingIndicator('niuma');
+    try {
+      const resultTiers = await callAPI('niuma', NI_UMA_SYSTEM, `基于以下最终题目集，请设计结果分档方案：\n\n${state.currentQuestions}\n\n要求：\n1. 设计3-5个结果等级（如"冷血动物"到"人间天使"）\n2. 每个等级给出分数范围、等级名称、一句话描述\n3. 等级名称要生动形象，贴合主题\n\n输出格式：\n### 等级 N：名称\n- **分数范围：** X~Y 分\n- **描述：** 一句话描述\n- **建议：** 给该等级用户的简短建议`);
+    } catch (e) {
+      removeTypingIndicator();
+      addMessage('system', `结果分档生成错误: ${e.message}`);
+    }
+    removeTypingIndicator();
+    if (!state.aborted) {
+      addMessage('system', `── 辩论结束. ${state.round} 轮完成. ──`);
+      addMessage('system', '最终题目集和结果分档如上所示。你可以使用下方按钮导出、复制或继续讨论。');
+      document.getElementById('resultFooter').classList.add('show');
+    }
+  }
+}
+
+function sendUserMessage() {
+  const input = document.getElementById('userInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  
+  // When debate is not running
+  if (!state.running) {
+    // Display the user message first
+    addMessage('user', msg);
+    state.debateHistory.push({ round: state.round, agent: 'user', content: msg });
+    if (msg === '继续' || msg === 'continue') {
+      // Just continue without interjection
+      continueDebate();
+    } else {
+      // Handle the opinion first, then continue
+      state.pendingUserMessage = msg;
+      handlePostDebateOpinion();
+    }
+    return;
+  }
+  
+  // Abort any ongoing API call
+  if (state.abortController) {
+    state.abortController.abort();
+    state.abortController = null;
+  }
+  removeTypingIndicator();
+  
+  state.pendingUserMessage = msg;
+  addMessage('user', msg);
+  state.debateHistory.push({ round: state.round, agent: 'user', content: msg });
+}
+
+async function handleUserInterruption() {
+  const msg = state.pendingUserMessage;
+  state.pendingUserMessage = null;
+  
+  addMessage('system', `正在纳入你的意见…`);
+  
+  // Send to both agents
+  addTypingIndicator('niuma');
+  try {
+    const response = await callAPI('niuma', NI_UMA_SYSTEM, `老板插话如下：\n\n${msg}\n\n请根据这个反馈修改你的题目集。输出完整的修改后版本。`);
+    removeTypingIndicator();
+    addMessage('niuma', response);
+    state.currentQuestions = response;
+    state.debateHistory.push({ round: state.round, agent: 'niuma', content: response, userInterrupt: true });
+  } catch (e) {
+    removeTypingIndicator();
+    addMessage('system', `牛马错误: ${e.message}`);
+  }
+}
+
+async function handlePostDebateOpinion() {
+  const msg = state.pendingUserMessage;
+  state.pendingUserMessage = null;
+  
+  state.running = true;
+  state.aborted = false;
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-flex';
+  document.getElementById('userInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('resultFooter').classList.remove('show');
+  
+  addMessage('system', '正在纳入你的意见…');
+  
+  // First, let Niu Ma respond to the opinion
+  addTypingIndicator('niuma');
+  try {
+    const response = await callAPI('niuma', NI_UMA_SYSTEM, `老板的意见如下：\n\n${msg}\n\n请根据这个反馈修改你的题目集。输出完整的修改后版本。`);
+    removeTypingIndicator();
+    addMessage('niuma', response);
+    state.currentQuestions = response;
+    state.debateHistory.push({ round: state.round, agent: 'niuma', content: response, userInterrupt: true });
+  } catch (e) {
+    removeTypingIndicator();
+    addMessage('system', `牛马错误: ${e.message}`);
+    state.running = false;
+    document.getElementById('startBtn').style.display = 'inline-flex';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('resultFooter').classList.add('show');
+    return;
+  }
+  
+  // Then continue with 3 more rounds of debate
+  const extraRounds = 3;
+  state.extraRounds = extraRounds;
+  state.totalExtraRounds += extraRounds;
+  state.maxRounds = state.round + extraRounds;
+  
+  addMessage('system', `继续 ${extraRounds} 轮…`);
+  
+  for (let i = state.round + 1; i <= state.maxRounds; i++) {
+    if (state.aborted) break;
+    state.round = i;
+    updateRoundDisplay();
+
+    if (state.pendingUserMessage) {
+      await handleUserInterruption();
+      if (state.aborted) break;
+      continue;
+    }
+
+    addMessage('system', `第 ${state.round} 轮：刺儿头正在审查…`);
+    addTypingIndicator('citou');
+    let citouMsg;
+    try {
+      citouMsg = await callAPI('citou', CI_TOU_SYSTEM, `牛马当前的题目集：\n\n${state.currentQuestions}\n\n请从以下五个维度审查：科学有效性、极端性、情境相关性、全面性、可操作性。`);
+    } catch (e) {
+      removeTypingIndicator();
+      if (e.name === 'AbortError' && state.pendingUserMessage) {
+        // User interrupted, will handle below
+      } else {
+        addMessage('system', `刺儿头错误: ${e.message}`); break;
+      }
+    }
+    removeTypingIndicator();
+    if (state.aborted) break;
+    if (citouMsg) {
+      addMessage('citou', citouMsg, { challenge: true });
+      state.debateHistory.push({ round: state.round, agent: 'citou', content: citouMsg, challenge: true });
+    }
+
+    if (state.pendingUserMessage) {
+      await handleUserInterruption();
+      if (state.aborted) break;
+      continue;
+    }
+
+    addMessage('system', `第 ${state.round} 轮：牛马正在回应…`);
+    addTypingIndicator('niuma');
+    let niumaMsg;
+    try {
+      niumaMsg = await callAPI('niuma', NI_UMA_SYSTEM, `刺儿头对你的题目提出了挑战：\n\n${citouMsg}\n\n请修改你的题目集。输出完整的修改后版本。`);
+    } catch (e) {
+      removeTypingIndicator();
+      if (e.name === 'AbortError' && state.pendingUserMessage) {
+        // User interrupted, will handle below
+      } else {
+        addMessage('system', `牛马错误: ${e.message}`); break;
+      }
+    }
+    removeTypingIndicator();
+    if (state.aborted) break;
+    addMessage('niuma', niumaMsg);
+    state.currentQuestions = niumaMsg;
+    state.debateHistory.push({ round: state.round, agent: 'niuma', content: niumaMsg });
+  }
+  
+  if (!state.aborted) {
+    addMessage('system', `── 辩论结束. ${state.round} 轮完成. ──`);
+    addMessage('system', '最终题目集如上所示. 你可以使用下方按钮导出、复制或继续讨论。');
+    document.getElementById('resultFooter').classList.add('show');
+  }
+  
+  state.running = false;
+  document.getElementById('startBtn').style.display = 'inline-flex';
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('userInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  stopTimer();
+}
+
+function stopDebate() {
+  state.aborted = true;
+  if (state.abortController) {
+    state.abortController.abort();
+    state.abortController = null;
+  }
+  removeTypingIndicator();
+  addMessage('system', '用户停止了辩论。');
+  if (state.currentQuestions) {
+    document.getElementById('resultFooter').classList.add('show');
+  }
+}
+
+function clearDebate() {
+  if (state.running) {
+    if (state.abortController) { state.abortController.abort(); state.abortController = null; }
+    state.aborted = true; state.running = false; stopTimer();
+  }
+  state.messages = []; state.currentQuestions = ''; state.debateHistory = [];
+  state.round = 0; state.extraRounds = 0; state.totalExtraRounds = 0; state.maxRounds = 5;
+  state.pendingUserMessage = null;
+  document.getElementById('debateMessages').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">♢</div>
+      <p>输入主题后点击"开始"<br>两个Agent将开始对话</p>
+    </div>`;
+  document.getElementById('roundDisplay').textContent = '等待输入';
+  document.getElementById('extraRoundBadge').style.display = 'none';
+  document.getElementById('resultFooter').classList.remove('show');
+  document.getElementById('startBtn').style.display = 'inline-flex';
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('userInput').disabled = true;
+  document.getElementById('sendBtn').disabled = true;
+  stopTimer(); updateTimerDisplay();
+}
+
+function continueDebate() {
+  if (!state.currentQuestions) {
+    addMessage('system', '没有可继续的题目集。请先开始一个辩论。');
+    return;
+  }
+  if (state.running) return;
+  
+  const extraRounds = 3;
+  state.extraRounds = extraRounds;
+  state.totalExtraRounds += extraRounds;
+  state.maxRounds = state.round + extraRounds;
+  state.running = true;
+  state.aborted = false;
+  state.pendingUserMessage = null;
+
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'inline-flex';
+  document.getElementById('userInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('resultFooter').classList.remove('show');
+
+  addMessage('system', `继续 ${extraRounds} 轮…`);
+
+  (async () => {
+    try {
+      for (let i = state.round + 1; i <= state.maxRounds; i++) {
+        if (state.aborted) break;
+        state.round = i;
+        updateRoundDisplay();
+
+        if (state.pendingUserMessage) {
+          await handleUserInterruption();
+          if (state.aborted) break;
+          continue;
+        }
+
+        addMessage('system', `第 ${state.round} 轮：刺儿头正在审查…`);
+        addTypingIndicator('citou');
+        let citouMsg;
+        try {
+          citouMsg = await callAPI('citou', CI_TOU_SYSTEM, `牛马当前的题目集：\n\n${state.currentQuestions}\n\n请从以下五个维度审查：科学有效性、极端性、情境相关性、全面性、可操作性。`);
+        } catch (e) {
+          removeTypingIndicator();
+          if (e.name === 'AbortError' && state.pendingUserMessage) {
+            // User interrupted, will handle below
+          } else {
+            addMessage('system', `刺儿头错误: ${e.message}`); break;
+          }
+        }
+        removeTypingIndicator();
+        if (state.aborted) break;
+        if (citouMsg) {
+          addMessage('citou', citouMsg, { challenge: true });
+          state.debateHistory.push({ round: state.round, agent: 'citou', content: citouMsg, challenge: true });
+        }
+
+        if (state.pendingUserMessage) {
+          await handleUserInterruption();
+          if (state.aborted) break;
+          continue;
+        }
+
+        addMessage('system', `第 ${state.round} 轮：牛马正在回应…`);
+        addTypingIndicator('niuma');
+        let niumaMsg;
+        try {
+          niumaMsg = await callAPI('niuma', NI_UMA_SYSTEM, `刺儿头对你的题目提出了挑战：\n\n${citouMsg}\n\n请修改你的题目集。输出完整的修改后版本。`);
+        } catch (e) {
+          removeTypingIndicator();
+          if (e.name === 'AbortError' && state.pendingUserMessage) {
+            // User interrupted, will handle below
+          } else {
+            addMessage('system', `牛马错误: ${e.message}`); break;
+          }
+        }
+        removeTypingIndicator();
+        if (state.aborted) break;
+        addMessage('niuma', niumaMsg);
+        state.currentQuestions = niumaMsg;
+        state.debateHistory.push({ round: state.round, agent: 'niuma', content: niumaMsg });
+      }
+      if (!state.aborted) {
+        addMessage('system', `── 辩论结束. ${state.round} 轮完成. ──`);
+        addMessage('system', '最终题目集如上所示. 你可以使用下方按钮导出、复制或继续讨论。');
+        document.getElementById('resultFooter').classList.add('show');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') addMessage('system', `错误: ${err.message}`);
+    } finally {
+      state.running = false;
+      document.getElementById('startBtn').style.display = 'inline-flex';
+      document.getElementById('stopBtn').style.display = 'none';
+      document.getElementById('userInput').disabled = false;
+      document.getElementById('sendBtn').disabled = false;
+      stopTimer();
+    }
+  })();
+}
+
+function exportMarkdown() {
+  const topic = state.topic || document.getElementById('topicInput').value.trim() || 'Untitled';
+  let md = `# 心灵锻造坊 — 输出\n\n`;
+  md += `**主题：** ${topic}\n`;
+  md += `**生成时间：** ${new Date().toLocaleString()}\n`;
+  md += `**轮数：** ${state.debateHistory.length > 0 ? state.round : 0}\n\n`;
+  md += `---\n\n`;
+  md += `## 最终题目集\n\n`;
+  md += state.currentQuestions || '(empty)\n';
+  md += `\n---\n\n`;
+  md += `## 辩论摘要\n\n`;
+  state.debateHistory.forEach((h) => {
+    const agent = h.agent === 'niuma' ? '**牛马**' : h.agent === 'citou' ? '**刺儿头**' : '**你**';
+    const tag = h.challenge ? ' [挑战]' : '';
+    const interrupt = h.userInterrupt ? ' [插话]' : '';
+    md += `### 第 ${h.round} · ${agent}${tag}${interrupt}\n\n${h.content}\n\n`;
+  });
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `psyche-forge_${topic.slice(0, 20)}_${new Date().toISOString().slice(0, 10)}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+  addMessage('system', 'Markdown文件已导出。');
+}
+
+function copyResult() {
+  const text = state.currentQuestions || '(empty)';
+  navigator.clipboard.writeText(text).then(() => {
+    addMessage('system', '已复制到剪贴板。');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    addMessage('system', '已复制到剪贴板。');
+  });
+}
+
+// Enter key to send
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('userInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendUserMessage();
+    }
+  });
+  
+  // Load saved settings
+  const savedProvider = localStorage.getItem('forgeApiProvider');
+  if (savedProvider) {
+    document.getElementById('apiProvider').value = savedProvider;
+    onProviderChange();
+  }
+  const saved = localStorage.getItem('forgeApiKey');
+  if (saved) document.getElementById('apiKey').value = saved;
+  const savedUrl = localStorage.getItem('forgeApiUrl');
+  if (savedUrl) document.getElementById('apiUrl').value = savedUrl;
+  const savedModel = localStorage.getItem('forgeApiModel');
+  if (savedModel) document.getElementById('apiModel').value = savedModel;
+
+  document.getElementById('apiKey').addEventListener('input', () => {
+    localStorage.setItem('forgeApiKey', document.getElementById('apiKey').value);
+  });
+  document.getElementById('apiUrl').addEventListener('input', () => {
+    localStorage.setItem('forgeApiUrl', document.getElementById('apiUrl').value);
+  });
+  document.getElementById('apiModel').addEventListener('input', () => {
+    localStorage.setItem('forgeApiModel', document.getElementById('apiModel').value);
+  });
+});
+</script>
+</body>
+</html>
