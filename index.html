@@ -614,7 +614,7 @@ async function callAPI(agent, systemPrompt, userMessage) {
   
   if (isProxy) {
     // 通过代理服务器转发（本地proxy-server.js 或 Vercel Serverless）
-    requestUrl = config.url.replace(/\/+$/, '') + '/chat/completions';
+    requestUrl = config.url.replace(/\/+$/, '') + '/api/proxy';
     body = JSON.stringify({
       url: 'https://api.deepseek.com',
       model: config.model,
