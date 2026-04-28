@@ -405,7 +405,7 @@
     <div class="row">
       <div class="field" style="flex:2">
         <label>API 地址</label>
-        <input type="text" id="apiUrl" value="https://bladeofself.vercel.app" placeholder="https://api.deepseek.com">
+        <input type="text" id="apiUrl" value="https://api.deepseek.com" placeholder="https://api.deepseek.com">
       </div>
     </div>
     <div class="row">
@@ -613,6 +613,7 @@ async function callAPI(agent, systemPrompt, userMessage) {
   let requestUrl, body, authHeader;
   
   if (isProxy) {
+    // 通过代理服务器转发（本地proxy-server.js 或 Vercel Serverless）
     requestUrl = config.url.replace(/\/+$/, '') + '/chat/completions';
     body = JSON.stringify({
       url: 'https://api.deepseek.com',
@@ -621,8 +622,10 @@ async function callAPI(agent, systemPrompt, userMessage) {
       temperature: 0.8,
       max_tokens: 4000,
     });
+    // 有Key就传，没有就不传（代理会用内置Key）
     authHeader = hasKey ? `Bearer ${config.key}` : '';
   } else {
+    // 直接调用API
     requestUrl = config.url.endsWith('/chat/completions') ? config.url : config.url.replace(/\/+$/, '') + '/chat/completions';
     body = JSON.stringify({
       model: config.model,
@@ -642,36 +645,6 @@ async function callAPI(agent, systemPrompt, userMessage) {
   const response = await fetch(requestUrl, {
     method: 'POST',
     headers: headers,
-    body: body,
-    signal: controller.signal,
-  });
-  
-  const isLocalProxy = config.url.includes('localhost') || config.url.includes('127.0.0.1');
-  let targetApiUrl = config.url;
-  let requestUrl = config.url;
-  
-  if (isLocalProxy) {
-    requestUrl = config.url.endsWith('/chat/completions') ? config.url : config.url.replace(/\/+$/, '') + '/chat/completions';
-    targetApiUrl = localStorage.getItem('agentRealApiUrl') || 'https://api.deepseek.com';
-  } else {
-    requestUrl = config.url.endsWith('/chat/completions') ? config.url : config.url.replace(/\/+$/, '') + '/chat/completions';
-    targetApiUrl = config.url;
-  }
-  
-  const body = JSON.stringify({
-    url: targetApiUrl,
-    model: config.model,
-    messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
-    temperature: 0.8,
-    max_tokens: 4000,
-  });
-  
-  const controller = new AbortController();
-  state.abortController = controller;
-  
-  const response = await fetch(requestUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.key}` },
     body: body,
     signal: controller.signal,
   });
