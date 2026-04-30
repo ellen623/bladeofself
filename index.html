@@ -664,20 +664,23 @@ const NI_UMA_GENERATE = `你是"牛马"，一位天才心理学家和产品设�
 
 ## 要求
 1. 生成3-5道题目
-2. 每道题必须是程度题（滑块/数字输入，不是二选一）
+2. 每道题必须是程度题（1-10分滑块选择）
 3. 题目要贴近选定的情境
-4. 标注冷酷方向（越高越冷酷 / 越低越冷酷）
-5. 设置合理的数值范围
+4. 每个选项的1分和10分都要有**具体的行为描述**，让用户一看就知道选1分是什么行为、选10分是什么行为
+5. 标注冷酷方向（越高越冷酷 / 越低越冷酷）
 
 ## 输出格式
 ### 题目1：[标题]
 > [场景描述]
-- **范围：** min ~ max
+- **1分：** [具体行为描述]
+- **10分：** [具体行为描述]
 - **冷酷方向：** 越高越冷酷 / 越低越冷酷
-- **评分：** 如何映射到0-10分
 
 ### 题目2：[标题]
-...`;
+> [场景描述]
+- **1分：** [具体行为描述]
+- **10分：** [具体行为描述]
+- **冷酷方向：** 越高越冷酷 / 越低越冷酷`;
 
 const CI_TOU_GENERATE = `你是"刺儿头"，一位严谨的实验心理学家和数据科学家。
 
@@ -1155,12 +1158,20 @@ function sendUserMessage() {
     document.getElementById('userInput').disabled = true;
     document.getElementById('sendBtn').disabled = true;
     regenerateTheories(msg);
+    return;
   }
   // If in scenario selection step, allow user to request more options
   if (state.step === 2 && state.scenarios.length > 0) {
     document.getElementById('userInput').disabled = true;
     document.getElementById('sendBtn').disabled = true;
     regenerateScenarios(msg);
+    return;
+  }
+  // If in question generation/adjustment step, allow user to give feedback
+  if ((state.step === 3 || state.step === 4) && state.currentQuestions) {
+    document.getElementById('userInput').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    regenerateQuestionsWithFeedback(msg);
   }
 }
 
@@ -1224,6 +1235,36 @@ async function regenerateScenarios(userFeedback) {
     document.getElementById('sendBtn').disabled = false;
     document.getElementById('userInput').placeholder = '还不满意？继续输入"再想想"或给更多例子…';
     addMessage('system', '👆 已重新生成。不满意可以继续输入反馈。');
+  } catch (err) {
+    removeTypingIndicator();
+    handleError(err);
+  }
+}
+
+async function regenerateQuestionsWithFeedback(userFeedback) {
+  addMessage('system', '牛马正在根据你的反馈重新生成题目…');
+  addTypingIndicator('niuma');
+  try {
+    const prompt = `用户选定了以下理论：${state.selectedTheories.join('、')}\n选定了以下情境：${state.selectedScenarios.join('、')}\n\n主题：${state.topic}\n\n之前已经生成过题目，但用户有反馈。用户的反馈是：${userFeedback}\n\n请根据用户的反馈重新生成一套心理测试题。`;
+    const questions = await callAPI('niuma', NI_UMA_GENERATE, prompt);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('niuma', questions);
+    state.currentQuestions = questions;
+    state.debateHistory.push({ step: state.step, agent: 'niuma', content: questions });
+
+    addMessage('system', '刺儿头正在审查新题目…');
+    addTypingIndicator('citou');
+    const qVerdict = await callAPI('citou', CI_TOU_GENERATE, `请审查以下题目集：\n\n${questions}`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('citou', qVerdict, { challenge: true });
+    state.debateHistory.push({ step: state.step, agent: 'citou', content: qVerdict, challenge: true });
+
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').placeholder = '继续输入反馈，牛马和刺儿头会响应…';
+    addMessage('system', '已根据反馈重新生成。继续输入意见可再次调整。');
   } catch (err) {
     removeTypingIndicator();
     handleError(err);
