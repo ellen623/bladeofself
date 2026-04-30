@@ -631,17 +631,16 @@ const NI_UMA_SCENARIO = `你是"牛马"，一位天才心理学家和产品设�
 你的任务：根据用户选定的理论，列出2-3个适用的测试情境。
 
 ## 要求
-1. 每个情境必须：名称、描述（1-2句话）、为什么能触发该理论的测量维度
-2. 情境之间要有区分度
-3. 输出格式必须严格如下：
+1. 每个情境只需给出**大方向名称**，不需要详细解释
+2. 例如：工作场景、家庭场景、社交场景、金钱场景、权力场景等
+3. 情境之间要有区分度
+4. 输出格式必须严格如下：
 
 ### 情境A：[名称]
 - **描述：** [一句话描述]
-- **触发维度：** [能测出什么]
 
 ### 情境B：[名称]
-- **描述：** [一句话描述]
-- **触发维度：** [能测出什么]`;
+- **描述：** [一句话描述]`;
 
 const CI_TOU_SCENARIO = `你是"刺儿头"，一位严谨的实验心理学家。
 
@@ -975,7 +974,11 @@ async function startFlow() {
     renderCards('theoryCards', state.theories, () => {
       document.getElementById('theoryConfirm').disabled = !state.theories.some(t => t.selected);
     });
-    addMessage('system', '👆 请在上方选择理论基础（可多选），然后点击"确认选择"。');
+    // Enable user input for requesting more options
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').placeholder = '不满意？输入"再想想"或给些例子启发牛马…';
+    addMessage('system', '👆 请在上方选择理论基础（可多选），然后点击"确认选择"。不满意可以输入"再想想"或给些例子，牛马会重新生成。');
 
   } catch (err) {
     handleError(err);
@@ -1146,6 +1149,85 @@ function sendUserMessage() {
   input.value = '';
   addMessage('user', msg);
   state.debateHistory.push({ step: state.step, agent: 'user', content: msg });
+
+  // If in theory selection step, allow user to request more options
+  if (state.step === 1 && state.theories.length > 0) {
+    document.getElementById('userInput').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    regenerateTheories(msg);
+  }
+  // If in scenario selection step, allow user to request more options
+  if (state.step === 2 && state.scenarios.length > 0) {
+    document.getElementById('userInput').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    regenerateScenarios(msg);
+  }
+}
+
+async function regenerateTheories(userFeedback) {
+  addMessage('system', '牛马正在根据你的反馈重新生成理论选项…');
+  addTypingIndicator('niuma');
+  try {
+    const theoryText = await callAPI('niuma', NI_UMA_THEORY, `主题：${state.topic}\n\n之前已经列过一些理论，但用户不满意。用户的反馈是：${userFeedback}\n\n请根据用户的反馈，列出2-3个不同的心理学/社会学理论。`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('niuma', theoryText);
+    state.debateHistory.push({ step: 1, agent: 'niuma', content: theoryText });
+
+    addMessage('system', '刺儿头正在审查新的理论选项…');
+    addTypingIndicator('citou');
+    const theoryVerdict = await callAPI('citou', CI_TOU_THEORY, `请审查以下理论选项：\n\n${theoryText}`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('citou', theoryVerdict, { challenge: true });
+    state.debateHistory.push({ step: 1, agent: 'citou', content: theoryVerdict, challenge: true });
+
+    state.theories = parseItems(theoryText, '理论');
+    parseVerdicts(theoryVerdict, state.theories);
+    renderCards('theoryCards', state.theories, () => {
+      document.getElementById('theoryConfirm').disabled = !state.theories.some(t => t.selected);
+    });
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').placeholder = '还不满意？继续输入"再想想"或给更多例子…';
+    addMessage('system', '👆 已重新生成。不满意可以继续输入反馈。');
+  } catch (err) {
+    removeTypingIndicator();
+    handleError(err);
+  }
+}
+
+async function regenerateScenarios(userFeedback) {
+  addMessage('system', '牛马正在根据你的反馈重新生成情境选项…');
+  addTypingIndicator('niuma');
+  try {
+    const scenarioText = await callAPI('niuma', NI_UMA_SCENARIO, `用户选定了以下理论：${state.selectedTheories.join('、')}\n\n主题：${state.topic}\n\n之前已经列过一些情境，但用户不满意。用户的反馈是：${userFeedback}\n\n请根据用户的反馈，列出2-3个不同的测试情境。`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('niuma', scenarioText);
+    state.debateHistory.push({ step: 2, agent: 'niuma', content: scenarioText });
+
+    addMessage('system', '刺儿头正在审查新的情境选项…');
+    addTypingIndicator('citou');
+    const scenarioVerdict = await callAPI('citou', CI_TOU_SCENARIO, `请审查以下情境选项：\n\n${scenarioText}`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('citou', scenarioVerdict, { challenge: true });
+    state.debateHistory.push({ step: 2, agent: 'citou', content: scenarioVerdict, challenge: true });
+
+    state.scenarios = parseItems(scenarioText, '情境');
+    parseVerdicts(scenarioVerdict, state.scenarios);
+    renderCards('scenarioCards', state.scenarios, () => {
+      document.getElementById('scenarioConfirm').disabled = !state.scenarios.some(s => s.selected);
+    });
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').placeholder = '还不满意？继续输入"再想想"或给更多例子…';
+    addMessage('system', '👆 已重新生成。不满意可以继续输入反馈。');
+  } catch (err) {
+    removeTypingIndicator();
+    handleError(err);
+  }
 }
 
 function handleError(err) {
