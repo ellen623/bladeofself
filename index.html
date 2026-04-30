@@ -317,6 +317,119 @@
   .result-footer .btn:hover { border-color: #1a1a1a; color: #1a1a1a; }
   .result-footer .btn-primary { border-color: #1a1a1a; background: #1a1a1a; color: #fff; }
   .result-footer .btn-primary:hover { background: #333; }
+  /* Selection cards */
+  .selection-panel {
+    display: none;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e8e4de;
+    background: #faf8f5;
+  }
+  .selection-panel.show { display: block; }
+  .selection-panel .step-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .selection-card {
+    background: #fff;
+    border: 1px solid #e8e4de;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .selection-card:hover { border-color: #bbb; }
+  .selection-card.selected { border-color: #1a1a1a; background: #f9f8f6; }
+  .selection-card .card-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .selection-card .card-desc {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+  }
+  .selection-card .card-verdict {
+    font-size: 11px;
+    margin-top: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .selection-card .card-check {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #fff;
+    transition: all 0.2s;
+  }
+  .selection-card.selected .card-check {
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+  }
+  .selection-panel .btn-confirm {
+    margin-top: 12px;
+    padding: 8px 24px;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .selection-panel .btn-confirm:hover { background: #333; }
+  .selection-panel .btn-confirm:disabled { opacity: 0.3; cursor: not-allowed; }
+  /* Slider panel */
+  .slider-panel {
+    display: none;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e8e4de;
+    background: #faf8f5;
+  }
+  .slider-panel.show { display: block; }
+  .slider-row {
+    margin-bottom: 14px;
+  }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-row .slider-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .slider-row .slider-label .slider-name { font-weight: 600; color: #1a1a1a; }
+  .slider-row input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2px;
+    background: #ddd;
+    outline: none;
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #1a1a1a;
+    cursor: pointer;
+    border-radius: 50%;
+  }
   @media (max-width: 600px) {
     .app { border: none; }
     .header { padding: 24px 16px 16px; }
@@ -328,6 +441,8 @@
     .debate-messages { padding: 16px; max-height: calc(100vh - 420px); }
     .input-area { padding: 12px 16px; }
     .result-footer { padding: 10px 16px; }
+    .selection-panel { padding: 14px 16px; }
+    .slider-panel { padding: 14px 16px; }
   }
 </style>
 </head>
@@ -335,7 +450,7 @@
 <div class="app" id="app">
   <div class="header">
     <h1 style="font-family:'Special Elite','Courier New',monospace;font-weight:400;letter-spacing:1px;">The Anatomy Blade of the Self</h1>
-    <div class="subtitle">双AGENT对抗式方案生成系统<br>牛马产出机制上不同的候选方案 → 刺儿头找致命漏洞 → 老板裁决</div>
+    <div class="subtitle">双AGENT搭积木式测试生成<br>先选理论 → 再选情境 → 综合生成 → 调参优化</div>
     <div class="divider"></div>
   </div>
   <div class="settings-bar">
@@ -389,32 +504,71 @@
   </div>
   <div class="topic-area">
     <textarea id="topicInput" rows="1" placeholder="描述你想测试的心理主题…">职场冷酷度测试，要贴近日常工作场景，题目要够极端，能测出一个人在职场上有多冷酷无情</textarea>
-    <button class="btn" id="startBtn" onclick="startDebate()">开始</button>
-    <button class="btn btn-danger" id="stopBtn" style="display:none" onclick="stopDebate()">停止</button>
-    <button class="btn btn-outline" id="clearBtn" onclick="clearDebate()">清空</button>
+    <button class="btn" id="startBtn" onclick="startFlow()">开始</button>
+    <button class="btn btn-danger" id="stopBtn" style="display:none" onclick="stopFlow()">停止</button>
+    <button class="btn btn-outline" id="clearBtn" onclick="clearAll()">清空</button>
   </div>
+
+  <!-- Selection panels (shown during flow) -->
+  <div class="selection-panel" id="theoryPanel">
+    <div class="step-title">第1步 · 选择理论基础（可多选）</div>
+    <div id="theoryCards"></div>
+    <button class="btn-confirm" id="theoryConfirm" onclick="confirmTheory()" disabled>确认选择</button>
+  </div>
+
+  <div class="selection-panel" id="scenarioPanel">
+    <div class="step-title">第2步 · 选择测试情境（可多选）</div>
+    <div id="scenarioCards"></div>
+    <button class="btn-confirm" id="scenarioConfirm" onclick="confirmScenario()" disabled>确认选择</button>
+  </div>
+
+  <div class="slider-panel" id="sliderPanel">
+    <div class="step-title">第4步 · 调整参数</div>
+    <div class="slider-row">
+      <div class="slider-label"><span class="slider-name">新颖程度</span><span id="noveltyVal">5</span></div>
+      <input type="range" id="noveltySlider" min="1" max="10" value="5" oninput="document.getElementById('noveltyVal').textContent=this.value">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-top:2px;"><span>常规</span><span>非常规</span></div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span class="slider-name">极端程度</span><span id="extremeVal">5</span></div>
+      <input type="range" id="extremeSlider" min="1" max="10" value="5" oninput="document.getElementById('extremeVal').textContent=this.value">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-top:2px;"><span>温和</span><span>极端</span></div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span class="slider-name">理论纯度</span><span id="purityVal">5</span></div>
+      <input type="range" id="puritySlider" min="1" max="10" value="5" oninput="document.getElementById('purityVal').textContent=this.value">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-top:2px;"><span>混合</span><span>纯理论</span></div>
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span class="slider-name">情境具体度</span><span id="concreteVal">5</span></div>
+      <input type="range" id="concreteSlider" min="1" max="10" value="5" oninput="document.getElementById('concreteVal').textContent=this.value">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#bbb;margin-top:2px;"><span>抽象</span><span>具体</span></div>
+    </div>
+    <button class="btn-confirm" onclick="regenerateWithParams()">重新生成</button>
+  </div>
+
   <div class="debate-area">
     <div class="debate-header">
       <div class="round-info">
-        <span id="roundDisplay">等待输入</span>
+        <span id="stepDisplay">等待输入</span>
       </div>
       <span id="timerDisplay" style="font-family:'IBM Plex Mono',monospace">⏱ 00:00</span>
     </div>
     <div class="debate-messages" id="debateMessages">
       <div class="empty-state">
         <div class="icon">♢</div>
-        <p>输入主题后点击"开始"<br>两个Agent将开始对话</p>
+        <p>输入主题后点击"开始"<br>两个Agent将逐步引导你完成测试设计</p>
       </div>
     </div>
   </div>
   <div class="input-area">
-    <input type="text" id="userInput" placeholder="辩论结束后，在此输入裁决意见…" disabled>
+    <input type="text" id="userInput" placeholder="在裁决阶段输入意见…" disabled>
     <button class="btn-send" id="sendBtn" onclick="sendUserMessage()" disabled>发送</button>
   </div>
   <div class="result-footer" id="resultFooter">
     <button class="btn btn-primary" onclick="exportMarkdown()">导出</button>
     <button class="btn" onclick="copyResult()">复制</button>
-    <button class="btn" onclick="clearDebate()">重置</button>
+    <button class="btn" onclick="clearAll()">重置</button>
   </div>
 </div>
 
@@ -423,84 +577,125 @@
 const state = {
   running: false,
   aborted: false,
-  round: 0,
-  maxRounds: 3,
+  step: 0, // 0=idle, 1=theory, 2=scenario, 3=generating, 4=adjusting, 5=done
   messages: [],
-  candidates: [],
   debateHistory: [],
   timerInterval: null,
   seconds: 0,
   abortController: null,
   topic: '',
-  phase: 'idle',
-  pendingVerdict: null,
+  theories: [], // { name, desc, verdict, selected }
+  scenarios: [], // { name, desc, verdict, selected }
+  selectedTheories: [],
+  selectedScenarios: [],
+  currentQuestions: '',
+  params: { novelty: 5, extreme: 5, purity: 5, concrete: 5 },
 };
 
 // ===== System Prompts =====
-const NI_UMA_SYSTEM = `你是"牛马"，一位天才心理学家和产品设计师。
+const NI_UMA_THEORY = `你是"牛马"，一位天才心理学家和产品设计师。
 
-你的性格：才华横溢、富有创造力、自信。你擅长从不同机制角度设计思想实验。
+你的任务：根据用户的主题，列出2-3个相关的心理学/社会学理论。
 
-你的任务：根据用户的主题，产出**机制上不同的候选方案**。
+## 要求
+1. 每个理论必须：名称、核心观点（1-2句话）、为什么适用于这个主题
+2. 理论之间要有区分度（不能是同一个理论的不同表述）
+3. 输出格式必须严格如下，不要加任何额外内容：
 
-## 核心规则（必须遵守）
-1. **不准总结**——不要回顾历史，不要做综述，直接输出新方案
-2. **不准折中**——不要试图融合不同方案，每个方案必须机制独立
-3. **每轮产出2-3个候选方案**，每个方案的核心机制必须不同
-4. 每个方案标注：方案名称、核心机制、极端度(1-10)、新颖性(1-10)
-5. 如果这是第2轮或第3轮，必须参考刺儿头的批判产出**全新的方案**，而不是修改旧方案
+### 理论A：[名称]
+- **核心观点：** [一句话]
+- **适用性：** [为什么适用于这个主题]
 
-## 输出格式
-### 方案A：[名称]
-- **核心机制：** [一句话描述这个方案的核心逻辑]
-- **极端度：** [1-10]
-- **新颖性：** [1-10]
-- **题目：**
-  1. [题目1]
-  2. [题目2]
-  ...
+### 理论B：[名称]
+- **核心观点：** [一句话]
+- **适用性：** [为什么适用于这个主题]`;
 
-### 方案B：[名称]
-- **核心机制：** [与A完全不同]
-- **极端度：** [1-10]
-- **新颖性：** [1-10]
-- **题目：**
-  ...
+const CI_TOU_THEORY = `你是"刺儿头"，一位严谨的实验心理学家。
 
-### 方案C：[名称]（可选）
-- **核心机制：** [与A、B都不同]
-...`;
-
-const CI_TOU_SYSTEM = `你是"刺儿头"，一位实验心理学家和数据科学家。
-
-你的性格：严谨、理性、注重细节。你批评的是工作，不是人。
-
-## 你的任务
-对牛马的每个候选方案，从以下维度找**致命漏洞**：
-
-1. **硬约束冲突** ❌——是否违背已知科学事实？如果是，直接标记为"致命"
-2. **证据缺口** ⚠️——方案依赖的假设是否有证据支持？
-3. **逻辑漏洞** ⚠️——方案内部是否有自相矛盾？
-4. **可操作性** ⚠️——题目是否清晰可回答？
-
-## 核心规则
-- 每个方案必须单独审查
-- 每个审查必须标注：✅ 通过 / ⚠️ 有风险 / ❌ 致命
-- 每个问题必须附带具体证据或理由
-- 不要提修改建议——你的任务是指出问题，不是解决问题
-- 如果所有方案都有致命问题，明确说"所有方案均不通过"
+你的任务：审查牛马列出的理论选项，从以下维度找问题：
+1. 是否违背已知科学事实？
+2. 理论解释是否准确？
+3. 是否适用于该主题？
 
 ## 输出格式
-### 审查 方案A：[名称]
+### 审查 理论A：[名称]
 **裁决：** ✅ / ⚠️ / ❌
-**问题清单：**
-1. [具体问题] — [证据/理由]
-2. ...
+**问题：** [如果有问题，说明理由]
 
-### 审查 方案B：[名称]
+### 审查 理论B：[名称]
 **裁决：** ✅ / ⚠️ / ❌
-**问题清单：**
+**问题：** [如果有问题，说明理由]`;
+
+const NI_UMA_SCENARIO = `你是"牛马"，一位天才心理学家和产品设计师。
+
+你的任务：根据用户选定的理论，列出2-3个适用的测试情境。
+
+## 要求
+1. 每个情境必须：名称、描述（1-2句话）、为什么能触发该理论的测量维度
+2. 情境之间要有区分度
+3. 输出格式必须严格如下：
+
+### 情境A：[名称]
+- **描述：** [一句话描述]
+- **触发维度：** [能测出什么]
+
+### 情境B：[名称]
+- **描述：** [一句话描述]
+- **触发维度：** [能测出什么]`;
+
+const CI_TOU_SCENARIO = `你是"刺儿头"，一位严谨的实验心理学家。
+
+你的任务：审查牛马列出的情境选项，从以下维度找问题：
+1. 情境是否合理、可操作？
+2. 是否真的能触发对应理论的测量维度？
+3. 是否有更好的替代？
+
+## 输出格式
+### 审查 情境A：[名称]
+**裁决：** ✅ / ⚠️ / ❌
+**问题：** [如果有问题，说明理由]
+
+### 审查 情境B：[名称]
+**裁决：** ✅ / ⚠️ / ❌
+**问题：** [如果有问题，说明理由]`;
+
+const NI_UMA_GENERATE = `你是"牛马"，一位天才心理学家和产品设计师。
+
+你的任务：根据用户选定的理论和情境，综合生成一套心理测试题。
+
+## 要求
+1. 生成3-5道题目
+2. 每道题必须是程度题（滑块/数字输入，不是二选一）
+3. 题目要贴近选定的情境
+4. 标注冷酷方向（越高越冷酷 / 越低越冷酷）
+5. 设置合理的数值范围
+
+## 输出格式
+### 题目1：[标题]
+> [场景描述]
+- **范围：** min ~ max
+- **冷酷方向：** 越高越冷酷 / 越低越冷酷
+- **评分：** 如何映射到0-10分
+
+### 题目2：[标题]
 ...`;
+
+const CI_TOU_GENERATE = `你是"刺儿头"，一位严谨的实验心理学家和数据科学家。
+
+你的任务：审查牛马生成的题目集，从以下维度找问题：
+1. 硬约束冲突 ❌——是否违背已知科学事实？
+2. 逻辑漏洞 ⚠️——题目内部是否自相矛盾？
+3. 可操作性 ⚠️——题目是否清晰可回答？
+4. 情境匹配度 ⚠️——题目是否匹配选定的情境？
+
+## 输出格式
+### 审查 题目1：[标题]
+**裁决：** ✅ / ⚠️ / ❌
+**问题：** [如果有问题，说明理由]
+
+### 审查 题目2：[标题]
+**裁决：** ✅ / ⚠️ / ❌
+**问题：** [如果有问题，说明理由]`;
 
 // ===== UI Helpers =====
 function toggleSettings(panel) {
@@ -564,15 +759,10 @@ function updateTimerDisplay() {
   document.getElementById('timerDisplay').textContent = `⏱ ${m}:${s}`;
 }
 
-function updateRoundDisplay() {
-  const el = document.getElementById('roundDisplay');
-  if (state.phase === 'debating') {
-    el.textContent = `辩论 第 ${state.round}/${state.maxRounds} 轮`;
-  } else if (state.phase === '裁决') {
-    el.textContent = '👑 请老板裁决';
-  } else {
-    el.textContent = '等待输入';
-  }
+function updateStepDisplay() {
+  const el = document.getElementById('stepDisplay');
+  const steps = ['等待输入', '选择理论', '选择情境', '生成题目中…', '调整参数', '完成'];
+  el.textContent = steps[state.step] || '等待输入';
 }
 
 function addMessage(type, content, extra = {}) {
@@ -672,174 +862,280 @@ async function callAPI(agent, systemPrompt, userMessage) {
   return data.choices[0].message.content;
 }
 
-// ===== Parse candidates from Niu Ma output =====
-function parseCandidates(text, round) {
-  const candidates = [];
-  const blocks = text.split(/###\s+(方案|Scheme)\s*[A-Za-z0-9]+\s*[:：]/);
-  // Simple approach: find lines with "方案" or "Scheme"
-  const lines = text.split('\n');
-  let current = null;
-  for (const line of lines) {
-    const match = line.match(/###\s+(方案|Scheme)\s*([A-Za-z0-9]+)\s*[:：]\s*(.+)/);
-    if (match) {
-      if (current) candidates.push(current);
-      current = { round, name: match[2].trim(), mechanism: '', content: match[0], verdict: null };
-    } else if (current) {
-      current.content += '\n' + line;
-      const mechMatch = line.match(/核心机制[：:]\s*(.+)/);
-      if (mechMatch) current.mechanism = mechMatch[1].trim();
-    }
+// ===== Parse structured output =====
+function parseItems(text, prefix) {
+  const items = [];
+  const regex = new RegExp(`###\\s+${prefix}\\s*([A-Za-z0-9]+)\\s*[:：]\\s*(.+)`, 'g');
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const name = match[2].trim();
+    const start = match.index;
+    const nextMatch = new RegExp(`###\\s+${prefix}\\s*[A-Za-z0-9]+\\s*[:：]`, 'g');
+    nextMatch.lastIndex = start + match[0].length;
+    const next = nextMatch.exec(text);
+    const content = next ? text.slice(start, next.index) : text.slice(start);
+    items.push({ name, content, selected: false });
   }
-  if (current) candidates.push(current);
-  // Fallback: if no structured parsing, treat whole text as one candidate
-  if (candidates.length === 0) {
-    candidates.push({ round, name: 'A', mechanism: '', content: text, verdict: null });
+  if (items.length === 0) {
+    // Fallback: treat whole text as one item
+    items.push({ name: '默认', content: text, selected: false });
   }
-  return candidates;
+  return items;
 }
 
-// ===== Main Debate Logic =====
-async function startDebate() {
+function parseVerdicts(text, items) {
+  // Try to match verdicts to items
+  items.forEach(item => {
+    const regex = new RegExp(`审查\\s*${item.name}[\\s\\S]*?裁决[：:]\\s*([✅⚠️❌])`);
+    const match = text.match(regex);
+    if (match) {
+      item.verdict = match[1];
+    } else {
+      item.verdict = '⚠️';
+    }
+  });
+}
+
+// ===== Selection card rendering =====
+function renderCards(containerId, items, onChange) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  items.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'selection-card' + (item.selected ? ' selected' : '');
+    card.innerHTML = `
+      <div class="card-check">${item.selected ? '✓' : ''}</div>
+      <div class="card-title">${item.name}</div>
+      <div class="card-desc">${item.content.replace(/[#*\-]/g, '').slice(0, 200)}</div>
+      ${item.verdict ? `<div class="card-verdict">刺儿头：${item.verdict}</div>` : ''}
+    `;
+    card.onclick = () => {
+      item.selected = !item.selected;
+      renderCards(containerId, items, onChange);
+      if (onChange) onChange();
+    };
+    container.appendChild(card);
+  });
+}
+
+// ===== Main Flow =====
+async function startFlow() {
   const topic = document.getElementById('topicInput').value.trim();
   if (!topic) { addMessage('system', '请先输入主题。'); return; }
   
   state.topic = topic;
   state.running = true;
   state.aborted = false;
-  state.round = 0;
+  state.step = 1;
   state.messages = [];
-  state.candidates = [];
   state.debateHistory = [];
-  state.phase = 'debating';
-  state.pendingVerdict = null;
+  state.theories = [];
+  state.scenarios = [];
+  state.selectedTheories = [];
+  state.selectedScenarios = [];
+  state.currentQuestions = '';
 
   document.getElementById('startBtn').style.display = 'none';
   document.getElementById('stopBtn').style.display = 'inline-flex';
   document.getElementById('userInput').disabled = true;
   document.getElementById('sendBtn').disabled = true;
   document.getElementById('resultFooter').classList.remove('show');
+  document.getElementById('theoryPanel').classList.remove('show');
+  document.getElementById('scenarioPanel').classList.remove('show');
+  document.getElementById('sliderPanel').classList.remove('show');
 
   const container = document.getElementById('debateMessages');
   container.innerHTML = '';
-  updateRoundDisplay();
+  updateStepDisplay();
   startTimer();
 
   try {
-    // Round 1: Niu Ma produces initial candidates
-    state.round = 1;
-    updateRoundDisplay();
-    addMessage('system', '第1轮：牛马正在产出候选方案…');
+    // Step 1: Generate theories
+    addMessage('system', '第1步：牛马正在生成理论选项…');
     addTypingIndicator('niuma');
-    const niuma1 = await callAPI('niuma', NI_UMA_SYSTEM, `请根据以下主题，产出2-3个机制上不同的候选方案：\n\n${topic}`);
+    const theoryText = await callAPI('niuma', NI_UMA_THEORY, `请根据以下主题，列出2-3个相关的心理学/社会学理论：\n\n${topic}`);
     removeTypingIndicator();
     if (state.aborted) return;
-    addMessage('niuma', niuma1);
-    const c1 = parseCandidates(niuma1, 1);
-    state.candidates.push(...c1);
-    state.debateHistory.push({ round: 1, agent: 'niuma', content: niuma1 });
+    addMessage('niuma', theoryText);
+    state.debateHistory.push({ step: 1, agent: 'niuma', content: theoryText });
 
-    // Round 2: Ci Tou critiques, Niu Ma produces new candidates
-    state.round = 2;
-    updateRoundDisplay();
-    addMessage('system', '第2轮：刺儿头正在审查方案…');
+    // Ci Tou reviews theories
+    addMessage('system', '刺儿头正在审查理论选项…');
     addTypingIndicator('citou');
-    const citou1 = await callAPI('citou', CI_TOU_SYSTEM, `请审查以下候选方案：\n\n${niuma1}`);
+    const theoryVerdict = await callAPI('citou', CI_TOU_THEORY, `请审查以下理论选项：\n\n${theoryText}`);
     removeTypingIndicator();
     if (state.aborted) return;
-    addMessage('citou', citou1, { challenge: true });
-    state.debateHistory.push({ round: 2, agent: 'citou', content: citou1, challenge: true });
+    addMessage('citou', theoryVerdict, { challenge: true });
+    state.debateHistory.push({ step: 1, agent: 'citou', content: theoryVerdict, challenge: true });
 
-    addMessage('system', '第2轮：牛马正在根据批判产出全新方案…');
-    addTypingIndicator('niuma');
-    const niuma2 = await callAPI('niuma', NI_UMA_SYSTEM, `刺儿头对你的方案提出了以下批判：\n\n${citou1}\n\n请参考这些批判，产出2-3个**全新的**候选方案（不要修改旧方案，要另起炉灶）。\n\n主题：${topic}`);
-    removeTypingIndicator();
-    if (state.aborted) return;
-    addMessage('niuma', niuma2);
-    const c2 = parseCandidates(niuma2, 2);
-    state.candidates.push(...c2);
-    state.debateHistory.push({ round: 2, agent: 'niuma', content: niuma2 });
+    // Parse and show theory cards
+    state.theories = parseItems(theoryText, '理论');
+    parseVerdicts(theoryVerdict, state.theories);
+    document.getElementById('theoryPanel').classList.add('show');
+    renderCards('theoryCards', state.theories, () => {
+      document.getElementById('theoryConfirm').disabled = !state.theories.some(t => t.selected);
+    });
+    addMessage('system', '👆 请在上方选择理论基础（可多选），然后点击"确认选择"。');
 
-    // Round 3: Ci Tou critiques again, Niu Ma produces final candidates
-    state.round = 3;
-    updateRoundDisplay();
-    addMessage('system', '第3轮：刺儿头正在审查新方案…');
-    addTypingIndicator('citou');
-    const citou2 = await callAPI('citou', CI_TOU_SYSTEM, `请审查以下候选方案：\n\n${niuma2}`);
-    removeTypingIndicator();
-    if (state.aborted) return;
-    addMessage('citou', citou2, { challenge: true });
-    state.debateHistory.push({ round: 3, agent: 'citou', content: citou2, challenge: true });
-
-    addMessage('system', '第3轮：牛马正在产出最终候选方案…');
-    addTypingIndicator('niuma');
-    const niuma3 = await callAPI('niuma', NI_UMA_SYSTEM, `刺儿头对你的新方案提出了以下批判：\n\n${citou2}\n\n请参考所有批判，产出2-3个**最终的**候选方案（仍然要机制不同，不准折中）。\n\n主题：${topic}`);
-    removeTypingIndicator();
-    if (state.aborted) return;
-    addMessage('niuma', niuma3);
-    const c3 = parseCandidates(niuma3, 3);
-    state.candidates.push(...c3);
-    state.debateHistory.push({ round: 3, agent: 'niuma', content: niuma3 });
-
-    // Enter verdict phase
-    state.phase = '裁决';
-    updateRoundDisplay();
-    addMessage('system', '── 3轮自由辩论结束 ──');
-    addMessage('system', '👑 请老板裁决：在下方输入框中，对每个候选方案给出你的裁决（保留/淘汰/组合意见）。');
-    
-    // Enable user input for verdict
-    document.getElementById('userInput').disabled = false;
-    document.getElementById('sendBtn').disabled = false;
-    document.getElementById('userInput').placeholder = '输入你的裁决意见（如：保留方案A，淘汰方案B，A+C组合）…';
-    
   } catch (err) {
-    if (err.name === 'AbortError') {
-      addMessage('system', '辩论已停止。');
-    } else if (err.name === 'QuotaError') {
-      addMessage('system', `⚠️ ${err.message}`);
-      document.getElementById('quotaDisplay').style.display = 'inline';
-    } else {
-      addMessage('system', `错误: ${err.message}`);
-      console.error(err);
-    }
+    handleError(err);
+  }
+}
+
+function confirmTheory() {
+  state.selectedTheories = state.theories.filter(t => t.selected).map(t => t.name);
+  if (state.selectedTheories.length === 0) return;
+  document.getElementById('theoryPanel').classList.remove('show');
+  state.step = 2;
+  updateStepDisplay();
+  generateScenarios();
+}
+
+async function generateScenarios() {
+  try {
+    addMessage('system', `第2步：牛马正在根据选定的理论（${state.selectedTheories.join('、')}）生成情境选项…`);
+    addTypingIndicator('niuma');
+    const scenarioText = await callAPI('niuma', NI_UMA_SCENARIO, `用户选定了以下理论：${state.selectedTheories.join('、')}\n\n主题：${state.topic}\n\n请根据这些理论，列出2-3个适用的测试情境。`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('niuma', scenarioText);
+    state.debateHistory.push({ step: 2, agent: 'niuma', content: scenarioText });
+
+    // Ci Tou reviews scenarios
+    addMessage('system', '刺儿头正在审查情境选项…');
+    addTypingIndicator('citou');
+    const scenarioVerdict = await callAPI('citou', CI_TOU_SCENARIO, `请审查以下情境选项：\n\n${scenarioText}`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('citou', scenarioVerdict, { challenge: true });
+    state.debateHistory.push({ step: 2, agent: 'citou', content: scenarioVerdict, challenge: true });
+
+    // Parse and show scenario cards
+    state.scenarios = parseItems(scenarioText, '情境');
+    parseVerdicts(scenarioVerdict, state.scenarios);
+    document.getElementById('scenarioPanel').classList.add('show');
+    renderCards('scenarioCards', state.scenarios, () => {
+      document.getElementById('scenarioConfirm').disabled = !state.scenarios.some(s => s.selected);
+    });
+    addMessage('system', '👆 请在上方选择测试情境（可多选），然后点击"确认选择"。');
+
+  } catch (err) {
+    handleError(err);
+  }
+}
+
+function confirmScenario() {
+  state.selectedScenarios = state.scenarios.filter(s => s.selected).map(s => s.name);
+  if (state.selectedScenarios.length === 0) return;
+  document.getElementById('scenarioPanel').classList.remove('show');
+  state.step = 3;
+  updateStepDisplay();
+  generateQuestions();
+}
+
+async function generateQuestions() {
+  try {
+    addMessage('system', '第3步：牛马正在综合生成题目…');
+    addTypingIndicator('niuma');
+    const prompt = `用户选定了以下理论：${state.selectedTheories.join('、')}\n选定了以下情境：${state.selectedScenarios.join('、')}\n\n主题：${state.topic}\n\n请综合生成一套心理测试题。`;
+    const questions = await callAPI('niuma', NI_UMA_GENERATE, prompt);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('niuma', questions);
+    state.currentQuestions = questions;
+    state.debateHistory.push({ step: 3, agent: 'niuma', content: questions });
+
+    // Ci Tou reviews questions
+    addMessage('system', '刺儿头正在审查题目…');
+    addTypingIndicator('citou');
+    const qVerdict = await callAPI('citou', CI_TOU_GENERATE, `请审查以下题目集：\n\n${questions}`);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('citou', qVerdict, { challenge: true });
+    state.debateHistory.push({ step: 3, agent: 'citou', content: qVerdict, challenge: true });
+
+    // Show slider panel for adjustments
+    state.step = 4;
+    updateStepDisplay();
+    document.getElementById('sliderPanel').classList.add('show');
+    addMessage('system', '👆 请在上方调整参数，然后点击"重新生成"微调题目。满意后可直接导出。');
+    document.getElementById('resultFooter').classList.add('show');
+
+  } catch (err) {
+    handleError(err);
   } finally {
     state.running = false;
     document.getElementById('startBtn').style.display = 'inline-flex';
     document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('userInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
     stopTimer();
   }
 }
 
-function stopDebate() {
+async function regenerateWithParams() {
+  state.params = {
+    novelty: parseInt(document.getElementById('noveltySlider').value),
+    extreme: parseInt(document.getElementById('extremeSlider').value),
+    purity: parseInt(document.getElementById('puritySlider').value),
+    concrete: parseInt(document.getElementById('concreteSlider').value),
+  };
+
+  addMessage('system', `正在根据参数重新生成（新颖:${state.params.novelty}, 极端:${state.params.extreme}, 纯度:${state.params.purity}, 具体度:${state.params.concrete}）…`);
+  addTypingIndicator('niuma');
+  try {
+    const prompt = `用户选定了以下理论：${state.selectedTheories.join('、')}\n选定了以下情境：${state.selectedScenarios.join('、')}\n\n主题：${state.topic}\n\n请根据以下参数调整题目：\n- 新颖程度：${state.params.novelty}/10（越高越新颖）\n- 极端程度：${state.params.extreme}/10（越高越极端）\n- 理论纯度：${state.params.purity}/10（越高越贴近纯理论）\n- 情境具体度：${state.params.concrete}/10（越高越具体）\n\n请重新生成一套心理测试题。`;
+    const questions = await callAPI('niuma', NI_UMA_GENERATE, prompt);
+    removeTypingIndicator();
+    if (state.aborted) return;
+    addMessage('niuma', questions);
+    state.currentQuestions = questions;
+    state.debateHistory.push({ step: 4, agent: 'niuma', content: questions });
+    addMessage('system', '已重新生成。继续调整参数可再次生成，满意后点击"导出"。');
+  } catch (err) {
+    removeTypingIndicator();
+    addMessage('system', `错误: ${err.message}`);
+  }
+}
+
+function stopFlow() {
   state.aborted = true;
   if (state.abortController) {
     state.abortController.abort();
     state.abortController = null;
   }
   removeTypingIndicator();
-  addMessage('system', '用户停止了辩论。');
+  addMessage('system', '已停止。');
+  document.getElementById('startBtn').style.display = 'inline-flex';
+  document.getElementById('stopBtn').style.display = 'none';
   document.getElementById('userInput').disabled = false;
   document.getElementById('sendBtn').disabled = false;
-  document.getElementById('resultFooter').classList.add('show');
+  stopTimer();
 }
 
-function clearDebate() {
+function clearAll() {
   if (state.running) {
     if (state.abortController) { state.abortController.abort(); state.abortController = null; }
     state.aborted = true; state.running = false; stopTimer();
   }
-  state.messages = []; state.candidates = []; state.debateHistory = [];
-  state.round = 0; state.phase = 'idle'; state.pendingVerdict = null;
+  state.messages = []; state.debateHistory = [];
+  state.step = 0; state.theories = []; state.scenarios = [];
+  state.selectedTheories = []; state.selectedScenarios = [];
+  state.currentQuestions = '';
   document.getElementById('debateMessages').innerHTML = `
     <div class="empty-state">
       <div class="icon">♢</div>
-      <p>输入主题后点击"开始"<br>两个Agent将开始对话</p>
+      <p>输入主题后点击"开始"<br>两个Agent将逐步引导你完成测试设计</p>
     </div>`;
-  document.getElementById('roundDisplay').textContent = '等待输入';
+  document.getElementById('stepDisplay').textContent = '等待输入';
   document.getElementById('resultFooter').classList.remove('show');
   document.getElementById('startBtn').style.display = 'inline-flex';
   document.getElementById('stopBtn').style.display = 'none';
   document.getElementById('userInput').disabled = true;
   document.getElementById('sendBtn').disabled = true;
+  document.getElementById('theoryPanel').classList.remove('show');
+  document.getElementById('scenarioPanel').classList.remove('show');
+  document.getElementById('sliderPanel').classList.remove('show');
   stopTimer(); updateTimerDisplay();
 }
 
@@ -848,16 +1144,26 @@ function sendUserMessage() {
   const msg = input.value.trim();
   if (!msg) return;
   input.value = '';
-  
   addMessage('user', msg);
-  state.debateHistory.push({ round: state.round, agent: 'user', content: msg });
-  
-  if (state.phase === '裁决') {
-    // Store verdict and generate final output
-    state.pendingVerdict = msg;
-    addMessage('system', '已收到裁决意见。你可以继续补充，或点击"导出"保存结果。');
-    document.getElementById('resultFooter').classList.add('show');
+  state.debateHistory.push({ step: state.step, agent: 'user', content: msg });
+}
+
+function handleError(err) {
+  if (err.name === 'AbortError') {
+    addMessage('system', '已停止。');
+  } else if (err.name === 'QuotaError') {
+    addMessage('system', `⚠️ ${err.message}`);
+    document.getElementById('quotaDisplay').style.display = 'inline';
+  } else {
+    addMessage('system', `错误: ${err.message}`);
+    console.error(err);
   }
+  state.running = false;
+  document.getElementById('startBtn').style.display = 'inline-flex';
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('userInput').disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  stopTimer();
 }
 
 function exportMarkdown() {
@@ -865,20 +1171,21 @@ function exportMarkdown() {
   let md = `# 心灵锻造坊 — 输出\n\n`;
   md += `**主题：** ${topic}\n`;
   md += `**生成时间：** ${new Date().toLocaleString()}\n`;
-  md += `**辩论轮数：** ${state.debateHistory.length > 0 ? state.round : 0}\n\n`;
-  md += `---\n\n`;
-  
-  if (state.pendingVerdict) {
-    md += `## 老板裁决\n\n${state.pendingVerdict}\n\n---\n\n`;
+  md += `**选定的理论：** ${state.selectedTheories.join('、') || '(未选择)'}\n`;
+  md += `**选定的情境：** ${state.selectedScenarios.join('、') || '(未选择)'}\n`;
+  if (state.params) {
+    md += `**参数：** 新颖=${state.params.novelty}, 极端=${state.params.extreme}, 纯度=${state.params.purity}, 具体度=${state.params.concrete}\n`;
   }
-  
-  md += `## 辩论摘要\n\n`;
+  md += `\n---\n\n`;
+  md += `## 最终题目集\n\n`;
+  md += state.currentQuestions || '(空)\n';
+  md += `\n---\n\n`;
+  md += `## 生成过程\n\n`;
   state.debateHistory.forEach((h) => {
     const agent = h.agent === 'niuma' ? '**牛马**' : h.agent === 'citou' ? '**刺儿头**' : '**老板**';
     const tag = h.challenge ? ' [审查]' : '';
-    md += `### 第 ${h.round} 轮 · ${agent}${tag}\n\n${h.content}\n\n`;
+    md += `### 第${h.step}步 · ${agent}${tag}\n\n${h.content}\n\n`;
   });
-  
   const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -890,12 +1197,8 @@ function exportMarkdown() {
 }
 
 function copyResult() {
-  let text = '';
-  if (state.pendingVerdict) text += `老板裁决：\n${state.pendingVerdict}\n\n---\n\n`;
-  text += state.debateHistory.map(h => {
-    const agent = h.agent === 'niuma' ? '🧠 牛马' : h.agent === 'citou' ? '🔬 刺儿头' : '👤 老板';
-    return `【第${h.round}轮 · ${agent}】\n${h.content}`;
-  }).join('\n\n');
+  let text = `主题：${state.topic}\n理论：${state.selectedTheories.join('、')}\n情境：${state.selectedScenarios.join('、')}\n\n`;
+  text += state.currentQuestions || '(空)';
   navigator.clipboard.writeText(text).then(() => {
     addMessage('system', '已复制到剪贴板。');
   }).catch(() => {
